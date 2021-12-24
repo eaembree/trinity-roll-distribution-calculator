@@ -5,15 +5,15 @@ import { roundToTwo } from './lib';
  */
 export type DieValue = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
 
- /**
-  * A dictionary mapping a {@link DieRoll} value to the number of times
-  * that value occurred.
-  */
+/**
+ * A dictionary mapping a {@link DieRoll} value to the number of times
+ * that value occurred.
+ */
 export type DiePoolRoll = Record<DieValue, number>
 
- /**
- * Data needed to generate a {@link TrialsResult}
- */
+/**
+* Data needed to generate a {@link TrialsResult}
+*/
 export type TrialMetadata = {
     targetNumber: number,
     numDice: number,
@@ -23,7 +23,7 @@ export type TrialMetadata = {
 /**
  * Outcomes data for a trial generated from {@link TrialMetadata} input
  */
-export class TrialsResult {
+export class TrialResult {
     targetNumber: number;
     numDice: number;
     samples: number;
@@ -36,6 +36,11 @@ export class TrialsResult {
     successRatio: number;
     botchRatio: number;
     failureRatio: number;
+
+    successesRatioTwoPlus: number;
+    successesRatioThreePlus: number;
+    successesRatioFourPlus: number;
+    successesRatioFivePlus: number;
 
     /**
      *
@@ -62,6 +67,11 @@ export class TrialsResult {
         this.successRatio = this.successSamples / this.samples;
         this.botchRatio = this.botchSamples / this.samples;
         this.failureRatio = this.failureSamples / this.samples;
+
+        this.successesRatioTwoPlus = this.proportionMinSuccesses(2);
+        this.successesRatioThreePlus = this.proportionMinSuccesses(3);
+        this.successesRatioFourPlus = this.proportionMinSuccesses(4);
+        this.successesRatioFivePlus = this.proportionMinSuccesses(5);
     }
 
     successPercent(): number {
@@ -84,5 +94,17 @@ export class TrialsResult {
         })
 
         return roundToTwo(successTotal / this.samples);
+    }
+
+    proportionMinSuccesses(minSuccesses: number): number {
+        let totalSamples = 0;
+        Object.keys(this.successCounts).forEach((k) => {
+            const kInt = parseInt(k);
+            if (kInt >= minSuccesses) {
+                totalSamples += this.successCounts[k];
+            }
+        })
+
+        return totalSamples / this.samples;
     }
 }

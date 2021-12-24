@@ -1,5 +1,5 @@
 import { roundToTwo } from './lib';
-import { DieValue, DiePoolRoll, TrialMetadata, TrialsResult } from './types';
+import { DieValue, DiePoolRoll, TrialMetadata, TrialResult } from './types';
 
 /**
  * Creates and empty {@link DiePoolRoll}
@@ -86,8 +86,8 @@ function mergeDiePoolRolls(first: DiePoolRoll, second: DiePoolRoll): DiePoolRoll
  * @param trials 
  * @returns 
  */
-export function runTrial(trialsSample: TrialMetadata): TrialsResult {
-    const { targetNumber, numDice, samples } = trialsSample;
+export function computeTrialResult(metadata: TrialMetadata): TrialResult {
+    const { targetNumber, numDice, samples } = metadata;
     const successCounts: Record<number, number> = {};
 
     let successSamples = 0;
@@ -108,7 +108,7 @@ export function runTrial(trialsSample: TrialMetadata): TrialsResult {
 
     let failureSamples = samples - successSamples - botchSamples;
 
-    return new TrialsResult({
+    return new TrialResult({
         targetNumber,
         numDice,
         samples,

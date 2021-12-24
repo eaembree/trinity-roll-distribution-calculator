@@ -1,4 +1,5 @@
-import { runTrial } from './support';
+import { computeTrialResult } from './support';
+import { ratioToPercent } from './lib';
 
 function printTrialResult(options: {
     dicePoolSizes: Array<number>,
@@ -13,7 +14,9 @@ function printTrialResult(options: {
         samples: numSamples
     }));
 
-    const trialResults = trialMetadatas.map((t) => runTrial(t));
+    const trialResults = trialMetadatas.map((t) => computeTrialResult(t));
+
+    // trialResults.forEach(tr => console.log(tr.successCounts));
 
     console.table(
         trialResults
@@ -24,7 +27,11 @@ function printTrialResult(options: {
                 "Success %": o.successPercent(),
                 "Fail %": o.failurePercent(),
                 "Botch %": o.botchPercent(),
-                "Avg. Successes": o.successAverage()
+                "Avg. Successes": o.successAverage(),
+                "2+ %": ratioToPercent(o.successesRatioTwoPlus),
+                "3+ %": ratioToPercent(o.successesRatioThreePlus),
+                "4+ %": ratioToPercent(o.successesRatioFourPlus),
+                "5+ %": ratioToPercent(o.successesRatioFivePlus)
             }))
     );
 }
