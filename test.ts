@@ -1,3 +1,9 @@
+/**ake 
+ * Take any number and round it to two decimal places.
+ * Borrowed from https://www.delftstack.com/howto/javascript/javascript-round-to-2-decimal-places/#using-the-custom-function-to-round-a-number-to2-decimal-places-in-javascript
+ * @param num 
+ * @returns 
+ */
 function roundToTwo(num: number): number {
     return +(Math.round(parseFloat(num.toString() + "e+2"))  + "e-2");
 }
@@ -17,7 +23,7 @@ type DiePoolRoll = Record<DieValue, number>
  * Creates and empty {@link DiePoolRoll}
  * @returns 
  */
-function emptyRollSet(): DiePoolRoll {
+function emptyDiePoolRoll(): DiePoolRoll {
     return {
         1: 0, 2: 0, 3: 0, 4: 0, 5: 0,
         6: 0, 7: 0, 8: 0, 9: 0, 10: 0
@@ -28,7 +34,7 @@ function emptyRollSet(): DiePoolRoll {
  * Roll a ten sided die to generate a @see DieValue
  * @returns 
  */
-function rollDie(): DieValue {
+function rollD10(): DieValue {
     return Math.floor(Math.random() * 10) + 1 as DieValue;
 }
 
@@ -39,7 +45,7 @@ function rollDie(): DieValue {
  * @returns 
  */
 function mergeDiePoolRolls(first: DiePoolRoll, second: DiePoolRoll): DiePoolRoll {
-    const newSet = emptyRollSet();
+    const newSet = emptyDiePoolRoll();
     for (let v = 1; v <= 10; v += 1) {
         newSet[v] = first[v] + second[v];
     }
@@ -54,14 +60,14 @@ function mergeDiePoolRolls(first: DiePoolRoll, second: DiePoolRoll): DiePoolRoll
 function generateDiePoolRoll(numDice: number): DiePoolRoll {
     if (typeof numDice !== 'number') throw Error('numDice must be a number');
 
-    let totalRolls = emptyRollSet();
+    let totalRolls = emptyDiePoolRoll();
 
 
     while (numDice > 0) {
-        const rolls = emptyRollSet();
+        const rolls = emptyDiePoolRoll();
 
         for (let n = 0; n < numDice; n += 1) {
-            const num = rollDie();
+            const num = rollD10();
             rolls[num] = rolls[num] + 1;
         }
 
@@ -90,15 +96,27 @@ function countSuccesses(targetNumber: number, rolls: DiePoolRoll): number {
     return successes;
 }
 
-type TrialsResult = {
+/**
+ * Data needed to generate a {@link TrialsResult}
+ */
+type TrialMetadata = {
     targetNumber: number,
     numDice: number,
-    trials: number,
+    samples: number
+}
+
+/**
+ * Outcomes data for a trial generated from {@link TrialMetadata} input
+ */
+type TrialResult = {
+    targetNumber: number,
+    numDice: number,
+    samples: number,
     successCounts: Record<number, number>,
     successAverage: number,
-    successTrials: number,
-    botchTrials: number,
-    failureTrials: number,
+    successSamples: number,
+    botchSamples: number,
+    failureSamples: number,
     successRatio: number
     botchRatio: number
     failureRatio: number
@@ -112,18 +130,18 @@ type TrialsResult = {
  * @param trials 
  * @returns 
  */
-function runTrials(trialsSample: TrialsSample): TrialsResult {
-    const { targetNumber, numDice, trials } = trialsSample;
+function runTrial(trialsSample: TrialMetadata): TrialResult {
+    const { targetNumber, numDice, samples } = trialsSample;
     const successCounts: Record<number, number> = {};
 
-    let successTrials = 0;
-    let botchTrials = 0;
-    for (let t = 0; t < trials; t += 1) {
+    let successSamples = 0;
+    let botchSamples = 0;
+    for (let t = 0; t < samples; t += 1) {
         const rs = generateDiePoolRoll(numDice);
         const s = countSuccesses(targetNumber, rs);
 
-        if (s > 0) successTrials++;
-        if (s == 0 && rs[1] > 0) botchTrials++;
+        if (s > 0) successSamples++;
+        if (s == 0 && rs[1] > 0) botchSamples++;
 
         if (s in successCounts) {
             successCounts[s] += 1;
@@ -132,7 +150,7 @@ function runTrials(trialsSample: TrialsSample): TrialsResult {
         }
     }
 
-    let failureTrials = trials - successTrials - botchTrials;
+    let failureSamples = samples - successSamples - botchSamples;
 
     let successTotal = 0;
     Object.keys(successCounts).forEach((k) => {
@@ -143,41 +161,43 @@ function runTrials(trialsSample: TrialsSample): TrialsResult {
     return {
         targetNumber,
         numDice,
-        trials,
+        samples,
         successCounts,
-        successAverage: successTotal / trials,
-        successTrials,
-        botchTrials,
-        failureTrials,
-        successRatio: successTrials / trials,
-        botchRatio: botchTrials / trials,
-        failureRatio: failureTrials / trials
+        successAverage: successTotal / samples,
+        successSamples,
+        botchSamples,
+        failureSamples,
+        successRatio: successSamples / samples,
+        botchRatio: botchSamples / samples,
+        failureRatio: failureSamples / samples
     };
 }
 
-type TrialsSample = {
-    targetNumber: number,
-    numDice: number,
-    trials: number
-}
-
-function trialsArray(targetNumber: number, trials: number): Array<TrialsSample> {
+function trialArray(targetNumber: number, samples: number): Array<TrialMetadata> {
     return [
-        { targetNumber, numDice: 4, trials },
-        { targetNumber, numDice: 5, trials },
-        { targetNumber, numDice: 6, trials },
-        { targetNumber, numDice: 7, trials },
-        { targetNumber, numDice: 8, trials }
+        { targetNumber, numDice: 4, samples },
+        { targetNumber, numDice: 5, samples },
+        { targetNumber, numDice: 6, samples },
+        { targetNumber, numDice: 7, samples },
+        { targetNumber, numDice: 8, samples }
     ];
 }
 
-function printTrialResult(targetNumber: number, numTrials: number) {
-    const trialsSamples = trialsArray(targetNumber, numTrials);
-    const trialsResults = trialsSamples.map((t) => runTrials(t));
+function printTrialResult(targetNumber: number, numSamples: number) {
+    // Number of dice in each die pools
+    const dicePoolSizes = [4, 5, 6, 7, 8]
+
+    const trialMetadatas = dicePoolSizes.map((n) => ({
+        targetNumber,
+        numDice: n,
+        samples: numSamples }));
+
+    const trialResults = trialMetadatas.map((t) => runTrial(t));
+    
     console.table(
-        trialsResults
+        trialResults
             .map((o) => ({
-                "# Trials": o.trials,
+                "# Samples": o.samples,
                 "# Dice": o.numDice,
                 "Target #": o.targetNumber,
                 "Success %": roundToTwo(o.successRatio * 100),
