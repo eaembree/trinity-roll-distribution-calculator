@@ -16,18 +16,15 @@ function printTrialResult(options: {
 
     const trialResults = trialMetadatas.map((t) => computeTrialResult(t));
 
-    // trialResults.forEach(tr => console.log(tr.successCounts));
-
+    console.log(`TARGET NUMBER: ${targetNumber}   (results over ${numSamples} samples per dice pool size)`)
     console.table(
         trialResults
             .map((o) => ({
-                "# Samples": o.samples,
                 "# Dice": o.numDice,
-                "Target #": o.targetNumber,
-                "Success %": o.successPercent(),
-                "Fail %": o.failurePercent(),
-                "Botch %": o.botchPercent(),
                 "Avg. Successes": o.successAverage(),
+                "Botch %": o.botchPercent(),
+                "Fail %": o.failurePercent(),
+                "1+ Success %": o.successPercent(),
                 "2+ %": ratioToPercent(o.successesRatioTwoPlus),
                 "3+ %": ratioToPercent(o.successesRatioThreePlus),
                 "4+ %": ratioToPercent(o.successesRatioFourPlus),
@@ -45,10 +42,11 @@ const dicePoolSizes = [3, 4, 5, 6, 7, 8]
 // Number of samples in each trial
 const NUM_SAMPLES = 1000;
 
-targetNumbers.forEach((tn) => printTrialResult(
-    { dicePoolSizes, targetNumber: tn, numSamples: NUM_SAMPLES }
-));
+targetNumbers.forEach((tn, index) => {
+    printTrialResult(
+        { dicePoolSizes, targetNumber: tn, numSamples: NUM_SAMPLES }
+    )
 
-
-//printTrialResult({ dicePoolSizes, targetNumber: 8, numSamples: NUM_SAMPLES });
-
+    // Spacer between result sets
+    console.log();
+});
