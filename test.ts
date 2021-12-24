@@ -5,7 +5,7 @@
  * @returns 
  */
 function roundToTwo(num: number): number {
-    return +(Math.round(parseFloat(num.toString() + "e+2"))  + "e-2");
+    return +(Math.round(parseFloat(num.toString() + "e+2")) + "e-2");
 }
 
 /**
@@ -108,18 +108,68 @@ type TrialMetadata = {
 /**
  * Outcomes data for a trial generated from {@link TrialMetadata} input
  */
-type TrialResult = {
-    targetNumber: number,
-    numDice: number,
-    samples: number,
-    successCounts: Record<number, number>,
-    successAverage: number,
-    successSamples: number,
-    botchSamples: number,
-    failureSamples: number,
-    successRatio: number
-    botchRatio: number
-    failureRatio: number
+class TrialsResult {
+    targetNumber: number;
+    numDice: number;
+    samples: number;
+    successCounts: Record<number, number>;
+
+    successSamples: number;
+    botchSamples: number;
+    failureSamples: number;
+
+    successRatio: number;
+    botchRatio: number;
+    failureRatio: number;
+
+    /**
+     *
+     */
+    constructor(
+        data: {
+            targetNumber: number,
+            numDice: number,
+            samples: number,
+            successCounts: Record<number, number>,
+            successSamples: number,
+            failureSamples: number,
+            botchSamples: number
+        }
+    ) {
+        this.targetNumber = data.targetNumber;
+        this.numDice = data.numDice;
+        this.samples = data.samples;
+        this.successCounts = data.successCounts;
+        this.successSamples = data.successSamples;
+        this.failureSamples = data.failureSamples;
+        this.botchSamples = data.botchSamples;
+
+        this.successRatio = this.successSamples / this.samples;
+        this.botchRatio = this.botchSamples / this.samples;
+        this.failureRatio = this.failureSamples / this.samples;
+    }
+
+    successPercent(): number {
+        return roundToTwo(this.successRatio * 100);
+    }
+
+    failurePercent(): number {
+        return roundToTwo(this.failureRatio * 100);
+    }
+
+    botchPercent(): number {
+        return roundToTwo(this.botchRatio * 100);
+    }
+
+    successAverage(): number {
+        let successTotal = 0;
+        Object.keys(this.successCounts).forEach((k) => {
+            const kInt = parseInt(k);
+            successTotal += (kInt * this.successCounts[k]);
+        })
+
+        return roundToTwo(successTotal / this.samples);
+    }
 }
 
 /**
@@ -130,7 +180,7 @@ type TrialResult = {
  * @param trials 
  * @returns 
  */
-function runTrial(trialsSample: TrialMetadata): TrialResult {
+function runTrial(trialsSample: TrialMetadata): TrialsResult {
     const { targetNumber, numDice, samples } = trialsSample;
     const successCounts: Record<number, number> = {};
 
@@ -158,19 +208,15 @@ function runTrial(trialsSample: TrialMetadata): TrialResult {
         successTotal += (kInt * successCounts[k]);
     })
 
-    return {
+    return new TrialsResult({
         targetNumber,
         numDice,
         samples,
         successCounts,
-        successAverage: successTotal / samples,
         successSamples,
-        botchSamples,
         failureSamples,
-        successRatio: successSamples / samples,
-        botchRatio: botchSamples / samples,
-        failureRatio: failureSamples / samples
-    };
+        botchSamples
+    });
 }
 
 function trialArray(targetNumber: number, samples: number): Array<TrialMetadata> {
@@ -190,22 +236,22 @@ function printTrialResult(targetNumber: number, numSamples: number) {
     const trialMetadatas = dicePoolSizes.map((n) => ({
         targetNumber,
         numDice: n,
-        samples: numSamples }));
+        samples: numSamples
+    }));
 
     const trialResults = trialMetadatas.map((t) => runTrial(t));
-    
+
     console.table(
         trialResults
             .map((o) => ({
                 "# Samples": o.samples,
                 "# Dice": o.numDice,
                 "Target #": o.targetNumber,
-                "Success %": roundToTwo(o.successRatio * 100),
-                "Fail %": roundToTwo(o.failureRatio * 100),
-                "Botch %": roundToTwo(o.botchRatio * 100),
-                "Avg. Successes": roundToTwo(o.successAverage)
-            })
-            )
+                "Success %": o.successPercent(),
+                "Fail %": o.failurePercent(),
+                "Botch %": o.botchPercent(),
+                "Avg. Successes": o.successAverage()
+            }))
     );
 }
 
